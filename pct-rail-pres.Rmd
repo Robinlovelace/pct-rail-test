@@ -1,0 +1,122 @@
+---
+title: "The propensity to cycle to rail stations"
+author: "Robin Lovelace"
+date: "14 July 2016"
+output: 
+  ioslides_presentation: 
+    widescreen: yes
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+opts_chunk$set(echo = FALSE)
+```
+
+# The Propensity to Cycle Tool
+
+# Data sources for cycling potential to stations 
+
+## Warning: We'll be using R code | Using the following packages
+
+```{r}
+pkgs = c(
+  "sp", # package for spatial data
+  "tmap", # package for mapping
+  "readr", # fast read/write
+  "dplyr" # data analysis
+)
+lapply(pkgs, library, character.only = T)
+```
+
+
+## Where are they? 
+
+```{r}
+include_graphics("https://commons.wikimedia.org/wiki/File:CornwallRailwayMap.png#/media/File:CornwallRailwayMap.png")
+```
+
+
+## Downloading official data on stations | Source: [data.gov.uk](https://data.gov.uk/dataset/naptan)
+
+```{r, echo=TRUE, eval=FALSE}
+u = "http://www.dft.gov.uk/NaPTAN/snapshot/NaPTANcsv.zip"
+zf = file.path(tempdir(), "NaPTANcsv.zip")
+download.file(url = u, destfile = zf)
+unzip(zf, exdir = tempdir())
+stations = read_csv(file = file.path(tempdir(), "stops.csv"))
+rail = filter(stations, StopType == "RSE")
+saveRDS(rail, "data/rail.Rds")
+```
+
+```{r analysis-naptan, eval=FALSE}
+stations
+unique(stations$StopType)
+```
+
+## The naptan data | What does it mean? Details: [gov.uk](https://www.gov.uk/government/uploads/system/uploads/attachment_data/file/365271/background-information-naptan.pdf)
+
+```
+# A tibble: 6 x 43
+      ATCOCode NaptanCode PlateCode CleardownCode                CommonName CommonNameLang ShortCommonName ShortCommonNameLang Landmark
+         <chr>      <chr>     <chr>         <chr>                     <chr>          <chr>           <chr>               <chr>    <chr>
+1 0100BRP90087    bstgtaw                                  Brunswick Street             en                                             
+2 0100BRP90088    bstgtjp                                   Brigstocke Road             en                                             
+3 0100BRP90089    bstgtpj                                   Brigstocke Road             en                                             
+4 0100BRP90090    bstgwgm                                    Denbigh Street             en                                             
+5 0100BRP90091    bstgwta                                    Denbigh Street             en                                             
+6 0100CLFDOWN0                                    Clifton Down Rail Station             en                                             
+# ... with 34 more variables: LandmarkLang <chr>, Street <chr>, StreetLang <chr>, Crossing <chr>, CrossingLang <chr>, Indicator <chr>,
+#   IndicatorLang <chr>, Bearing <chr>, NptgLocalityCode <chr>, LocalityName <chr>, ParentLocalityName <chr>,
+#   GrandParentLocalityName <chr>, Town <chr>, TownLang <chr>, Suburb <chr>, SuburbLang <chr>, LocalityCentre <int>, GridType <chr>,
+#   Easting <int>, Northing <int>, Longitude <dbl>, Latitude <dbl>, StopType <chr>, BusStopType <chr>, TimingStatus <chr>,
+#   DefaultWaitTime <chr>, Notes <chr>, NotesLang <chr>, AdministrativeAreaCode <chr>, CreationDateTime <time>,
+#   ModificationDateTime <time>, RevisionNumber <int>, Modification <chr>, Status <chr>
+```
+
+## The geographical distribution of stations
+
+```{r, eval=TRUE}
+rail = readRDS("data/rail.Rds")
+coordinates(rail) = ~Longitude+Latitude
+plot(rail)
+```
+
+## Usage stats | Source: [Office of Rail and Road](http://orr.gov.uk/statistics/published-stats/station-usage-estimates)
+
+```{r}
+include_graphics("figures/railstats-exits.png")
+```
+
+For more info: see this [infographic](http://orr.gov.uk/__data/assets/pdf_file/0003/15366/station-usage-infographic.pdf) on usage stats.
+
+## Case study data: Cambridge
+
+Data pre-processed for the PCT - see http://pct.bike/cambridgeshire/
+
+```{r, echo=TRUE}
+z = readRDS("../pct-data/cambridgeshire/z.Rds")
+qtm(z) +
+  qtm(rail, bubble.size = 0.3)
+```
+
+# Methodology
+
+## Splitting a single line in 3
+
+```{r}
+include_graphics("figures/method-schematic.png")
+```
+
+
+## Create travel travel to station 'desire lines'
+
+
+
+## Concept: from a hackathon
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">Using <a href="https://twitter.com/robinlovelace">@robinlovelace</a> tool (stplanr, modified) to review <a href="https://twitter.com/cyclestreets">@cyclestreets</a> journeys from their API, with <a href="https://twitter.com/qgis">@qgis</a>. <a href="https://t.co/t17LebZFJu">pic.twitter.com/t17LebZFJu</a></p>&mdash; Matt Turner (@MattTurnerSheff) <a href="https://twitter.com/MattTurnerSheff/status/693828390059655169">January 31, 2016</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+# Scaling this up nationally
+
